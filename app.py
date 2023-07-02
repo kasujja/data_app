@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objs as go
 import plotly.io as pio
-# import plotly.offline as pyo
+import plotly.offline as pyo
 import plotly.subplots as sp
 from plotly.subplots import make_subplots
 from datetime import date
