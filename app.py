@@ -676,6 +676,8 @@ with tab5:
     frozen=active_parents[(active_parents['date']>='2023-01-01') & (active_parents['date']<='2023-04-30')]
     frozen=frozen.merge(users[['userId','phoneNumber']],on='userId',how='left')
     frozen_count=frozen['userId'].count()
+    frozen=frozen.merge(students[['userId','schoolId']],on='userId',how='left')
+    frozen=frozen.merge(schools[['schoolId','schName']],on='schoolId',how='left')
     
     
 
@@ -686,10 +688,13 @@ with tab5:
     churn_parents_details=churn_parents_details[(churn_parents_details['studentId']!='o')&(churn_parents_details['schoolId']!=5)]
     churn_parents_details=churn_parents_details[['phoneNumber','amount','userName','firstName','lastName','className','schoolId','accBalance','date']]
     churn_parents_details=churn_parents_details.merge(schools[['schoolId','schName']],on='schoolId',how='left').reset_index()
-    churn_parents_details=churn_parents_details.drop(columns=['schoolId','index'])
+    churn_parents_details=churn_parents_details.drop(columns=['index'])
     churn_parents_count=churn_parents_details['phoneNumber'].nunique()
     p3.metric("parents' Churn",f"{churn_parents_count}")
     p3.info(f'frozen:{frozen_count}')
+
+    frozen_origin=frozen.groupby('schName').count()['userId']
+    churn_parents_details_origin=churn_parents_details.groupby('schName').count()['phoneNumber']
 
     
 
@@ -697,6 +702,7 @@ with tab5:
     pmf_value=pmf['amount'].sum()
     pmf_count=pmf['userId'].count()
     pmf=pmf.merge(users[['userId','phoneNumber']],on='userId',how='left')
+    # pmf=pmf.merge(schools[['schoolId','schName']],on='schoolId',how='left')
     
     
     p1.metric('Current Active Parents',f'{int(active_parents_count)-int(frozen_count)}')
@@ -791,12 +797,14 @@ with tab5:
 
     st.info('churn parents 2022')
     st.write(churn_parents_details)
+    st.write(churn_parents_details_origin.sort_values(ascending=False))
 
     st.info('Top Parents')
     st.write(pmf)
 
     st.info('parents churn 2023')
     st.write(frozen)
+    st.write(frozen_origin.sort_values(ascending=False))
 
 
 
