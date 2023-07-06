@@ -11,7 +11,6 @@ import datetime
 from handler import Students , StudentTransactions,Transactions,Daily, Weekly,Savings,SavingTransactions,Parents,Schools,SavingBalance,ParentTransactions
 # from student_transactions import StudentTransactions
 
-
 st.set_page_config(page_title='KAWU',layout='wide')
 # Create instances of the Students and StudentTransactions classes
 student = Students()
@@ -21,12 +20,11 @@ daily=Daily()
 savings=Savings()
 saving_trans=SavingTransactions()
 user=Parents()
-users=user.getParents()
 school=Schools()
 schools=school.getSchools()
-
+parent_transaction=ParentTransactions()
 saved_balance=SavingBalance()
-saved_bal=saved_balance.getSavingBalance()
+
 # Get the data from the classes
 students = student.getStudents()
 student_trans_data = student_transactions.getStudentTransactions()
@@ -34,9 +32,11 @@ trans_data=transactions.getTransactions()
 daily_activity_data=daily.getActivity()
 savings_data=savings.getSavings()
 saving_tsn=saving_trans.getSavingTsn()
-merged_data = students.merge(student_trans_data, on="studentId", how="left")
-parent_transaction=ParentTransactions()
+users=user.getParents()
+saved_bal=saved_balance.getSavingBalance()
 ptrans=parent_transaction.getParent_transactions()
+
+merged_data = students.merge(student_trans_data, on="studentId", how="left")
 
 
 from collections import OrderedDict, defaultdict
@@ -90,9 +90,6 @@ with tab1:
         send=student_trans_data[student_trans_data['typeName']=='Send']
         send_value=send['amount'].sum()
         send_value='{:,.0f}'.format(send_value)
-        
-        
-
 
         std.metric('Cards Sold',f'UGX {cards_value}')
         std.info(f'Mobile Money: UGX {send_value}')
@@ -498,29 +495,6 @@ with tab3:
     weekly=week.getWeekly()
 
 
-    # st.title('weekly')
-
-    # # st.write(weekly)
-
-    # weekly['Week'] = pd.to_datetime(weekly['Week'].astype(str).str[:4] + '0101', format='%Y%m%d') + pd.to_timedelta((weekly['Week'].astype(str).str[4:].astype(int) - 1) * 7, unit='d')
-    # weekly['Week'] = weekly['Week'].dt.strftime('%Y-W%U')
-
-    # # create bar chart
-    # bar_chart = go.Bar(x=weekly['Week'], y=weekly['Amount'], name='Amount', marker=dict(color='#1a5ba6'))
-
-    # # create line chart
-    # line_chart = go.Scatter(x=weekly['Week'], y=weekly['Volume'], name='Volume', yaxis='y2', mode='lines+markers', line=dict(color='green'))
-
-    # # create layout for charts
-    # layout = go.Layout(title='Weekly Send Transaction Volume and Amount', xaxis=dict(title='Week',tickangle=-90,showgrid=True, gridcolor='lightgray', gridwidth=1), yaxis=dict(title='Amount'), yaxis2=dict(title='Volume', overlaying='y', side='right'))
-
-    # # create figure
-    # fig = go.Figure(data=[bar_chart, line_chart], layout=layout)
-
-    # fig.update_layout(plot_bgcolor='white')
-    # st.plotly_chart(fig)
-
-
 with tab4:
     st.title('Savings')
     
@@ -804,5 +778,4 @@ with tab5:
 
 with tab6:
     st.write(schools)
-
-# AVNS_OBDGbnz63x565HIBiKwapp   
+ 
