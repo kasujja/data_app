@@ -3,7 +3,6 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objs as go
 import plotly.io as pio
-import plotly.offline as pyo
 import plotly.subplots as sp
 from plotly.subplots import make_subplots
 from datetime import date
@@ -12,31 +11,37 @@ from handler import Students , StudentTransactions,Transactions,Daily, Weekly,Sa
 # from student_transactions import StudentTransactions
 
 st.set_page_config(page_title='KAWU',layout='wide')
-# Create instances of the Students and StudentTransactions classes
-student = Students()
-student_transactions = StudentTransactions()
-transactions=Transactions()
-daily=Daily()
-savings=Savings()
-saving_trans=SavingTransactions()
-user=Parents()
-school=Schools()
-schools=school.getSchools()
-parent_transaction=ParentTransactions()
-saved_balance=SavingBalance()
+# Instantiate the required classes
+students_handler = Students()
+student_transactions_handler = StudentTransactions()
+transactions_handler = Transactions()
+daily_handler = Daily()
+savings_handler = Savings()
+saving_transactions_handler = SavingTransactions()
+parents_handler = Parents()
+schools_handler = Schools()
+saving_balance_handler = SavingBalance()
+parent_transactions_handler = ParentTransactions()
 
 # Get the data from the classes
-students = student.getStudents()
-student_trans_data = student_transactions.getStudentTransactions()
-trans_data=transactions.getTransactions()
-daily_activity_data=daily.getActivity()
-savings_data=savings.getSavings()
-saving_tsn=saving_trans.getSavingTsn()
-users=user.getParents()
-saved_bal=saved_balance.getSavingBalance()
-ptrans=parent_transaction.getParent_transactions()
+students_data = students_handler.getStudents()
+student_transactions_data = student_transactions_handler.getStudentTransactions()
+transactions_data = transactions_handler.getTransactions()
+daily_activity_data = daily_handler.getActivity()
+savings_data = savings_handler.getSavings()
+saving_transactions_data = saving_transactions_handler.getSavingTsn()
+parents_data = parents_handler.getParents()
+schools_data = schools_handler.getSchools()
+saving_balance_data = saving_balance_handler.getSavingBalance()
+parent_transactions_data = parent_transactions_handler.getParent_transactions()
 
-merged_data = students.merge(student_trans_data, on="studentId", how="left")
+#helper functions
+
+def format_currency(value):
+    """Format currency values"""
+    return 'UGX {:,.0f}'.format(value)
+
+merged_data = students_data.merge(student_transactions_data, on="studentId", how="left")
 
 
 from collections import OrderedDict, defaultdict
@@ -45,59 +50,50 @@ st.sidebar.image('./awu.jpg',caption='')
 tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9=st.tabs(['OVERSIGHT','STUDENTS','STUDENT TRANSACTIONS','SAVINGS','PARENTS','SCHOOLS','AGENTS','REVENUE','FOOT PRINT'])
 
 with tab1:
-    # st.write(dad)
-
-    ## DataFrame mergers
-    # 1. Merge the data on studentId column
-
-    # st.write(merged_data)
-
     #Data wrangling
-    balance=students['accBalance'].sum()
-    stud=students['studentId'].nunique()
-    value=trans_data['amount'].sum()
-    volume=trans_data['tsnNumber'].count()
-    kawu=len(students[students['accBalance']<5000])
-
-    depositFilter=trans_data[trans_data['typeName']=='Deposit']
+    balance=students_data['accBalance'].sum()
+    stud=students_data['studentId'].nunique()
+    value=transactions_data['amount'].sum()
+    volume=transactions_data['tsnNumber'].count()
+    kawu=len(students_data[students_data['accBalance']<5000])
+    depositFilter=transactions_data[transactions_data['typeName']=='Deposit']
     deposit=depositFilter['amount'].sum()
     depositCount=depositFilter['tsnNumber'].count()
     depositTicket=deposit/depositCount
-    #active students
-    active=student_trans_data[(student_trans_data['typeName']=='Deposit') | (student_trans_data['typeName']=='Send')] 
+    active=student_transactions_data[(student_transactions_data['typeName']=='Deposit') | (student_transactions_data['typeName']=='Send')] 
     # st.write(active)
     active=active['studentId'].nunique()
     # st.info(f'Active students{active}')
-    st.title('OverAll')
+    # st.title('OverAll')
     #building app layout
     metrics=st.container()
     with metrics:
         bal,std,val,vol=st.columns(4)
-        balance='{:,.0f}'.format(balance)
-        bal.metric('Student Balance',f'UGX {balance}')
-        studs='{:,.0f}'.format(stud)
+        balance=format_currency(balance)
+        bal.metric('Student Balance',balance)
+        studs=format_currency(stud)
         
-        value='{:,.0f}'.format(value)
-        deposit='{:,.0f}'.format(deposit)
-        depositCount='{:,.0f}'.format(depositCount)
-        depositTicket='{:,.0f}'.format(depositTicket)
+        value=format_currency(value)
+        deposit=format_currency(deposit)
+        depositCount=format_currency(depositCount)
+        depositTicket=format_currency(depositTicket)
         # deposit=float(deposit)
-        cards=student_trans_data[student_trans_data['typeName']=='Card Activation']
+        cards=student_transactions_data[student_transactions_data['typeName']=='Card Activation']
         cards_value=cards['amount'].sum()
-        cards_value='{:,.0f}'.format(cards_value)
-        volume='{:,.0f}'.format(volume)
+        cards_value=format_currency(cards_value)
+        volume=format_currency(volume)
 
-        send=student_trans_data[student_trans_data['typeName']=='Send']
+        send=student_transactions_data[student_transactions_data['typeName']=='Send']
         send_value=send['amount'].sum()
-        send_value='{:,.0f}'.format(send_value)
+        send_value=format_currency(send_value)
 
-        std.metric('Cards Sold',f'UGX {cards_value}')
-        std.info(f'Mobile Money: UGX {send_value}')
-        val.metric('Transaction Value',f'UGX {value}')
-        val.info(f'Deposit Value: UGX {deposit}')
-        bal.info(f'Avg Deposit : UGX {depositTicket}')
-        vol.metric('Transaction Volume',f'{volume}')
-        vol.info(f'Deposit Volume: {depositCount}')
+        std.metric('Cards Sold',cards_value)
+        std.info(f'Mobile Money, {send_value}')
+        val.metric('Transaction Value',value)
+        val.info(f'Deposit Value,{deposit}')
+        bal.info(f'Avg Deposit ,{depositTicket}')
+        vol.metric('Transaction Volume',volume)
+        vol.info(f'Deposit Volume, {depositCount}')
         stds,acv,dor,kaw,loaded=st.columns(5)
         stds.metric('Students',f'{studs}')
         acv.metric('Active Cards',f'{active}')
@@ -132,12 +128,12 @@ with tab1:
 
     watch1,watch2=st.columns(2)
     with watch1:
-        daily_value='{:,.0f}'.format(daily_value)
-        st.metric('transaction Value',f'UGX {daily_value}')
+        daily_value=format_currency(daily_value)
+        st.metric('transaction Value',daily_value)
         sums=sums.to_dict()
         # watch1.write(sums)
         for key,value in sums.items():
-            value='{:,.0f}'.format(value)
+            value=format_currency(value)
             st.info(f'{key} :: UGX  {value}')
     
     with watch2:
@@ -155,12 +151,12 @@ with tab2:
     studets=st.container()
     with studets:
         st.subheader('STUDENTS')
-        gender=students[['studentId','gender','className']].groupby(['gender']).count()
-        genderBal=students[['gender','accBalance']].groupby(['gender']).sum(numeric_only=True)
-        studClass=students[['studentId','className']].groupby(['className']).count()
-        classBal=students[['gender','className','accBalance']].groupby(['className']).sum(numeric_only=True)
-        active=len(students[students['accBalance']>0])
-        # kawu=students-active
+        gender=students_data[['studentId','gender','className']].groupby(['gender']).count()
+        genderBal=students_data[['gender','accBalance']].groupby(['gender']).sum(numeric_only=True)
+        studClass=students_data[['studentId','className']].groupby(['className']).count()
+        classBal=students_data[['gender','className','accBalance']].groupby(['className']).sum(numeric_only=True)
+        active=len(students_data[students_data['accBalance']>0])
+        # kawu=students_data-active
         sex,act=st.columns(2)
         clas,clasN=st.columns(2)
         
@@ -207,13 +203,13 @@ with tab2:
 
         dist,bal=st.columns(2)
         with dist:
-            gd=students[['accBalance','gender','className']]
+            gd=students_data[['accBalance','gender','className']]
             # gd['stdId']=gd['studentId'].count()
             # st.write(gd)
             gdc=px.histogram(gd, x="className", y="accBalance", color='gender',barmode='group',title='Student Balance by class and gender')
             st.plotly_chart(gdc)
         with bal:
-            cl=students[['gender','className','accBalance']]
+            cl=students_data[['gender','className','accBalance']]
             clb=px.histogram(cl, x="gender", y="accBalance", color='className',barmode='group',title='Student Balance grouped by Gender and Class')
             st.plotly_chart(clb)
 
@@ -223,22 +219,22 @@ with tab3:
     class Years():
         yaz=st.multiselect(
             'choose year',
-            options=trans_data['year'].unique()
+            options=transactions_data['year'].unique()
         )
 
         def filter_year(self):
             time=Years.yaz
-            filts=trans_data.query('year==@time')
+            filts=transactions_data.query('year==@time')
             return filts
         
     filter=Years()
-    trans_data=filter.filter_year()
+    transactions_data=filter.filter_year()
     trns=st.container()
     with trns:
         # balance=students['accBalance'].sum(numeric_only=True)
         # stud=students['studentId'].nunique()
-        yearlyDeposit=trans_data[trans_data['typeName']=='Deposit']
-        yearlySend=trans_data[trans_data['typeName']=='Send']
+        yearlyDeposit=transactions_data[transactions_data['typeName']=='Deposit']
+        yearlySend=transactions_data[transactions_data['typeName']=='Send']
 
         yearlyDeposit=yearlyDeposit['amount'].sum()
         yearlySend=yearlySend['amount'].sum()
@@ -248,13 +244,13 @@ with tab3:
         
 
 
-        yearlyDeposit='{:,.0f}'.format(yearlyDeposit)    
-        yearlySend='{:,.0f}'.format(yearlySend)
-        sendPerc='{:,.0f}'.format(sendPerc)
-        trust='{:,.0f}'.format(trust)
+        yearlyDeposit=format_currency(yearlyDeposit)    
+        yearlySend=format_currency(yearlySend)
+        sendPerc=format_currency(sendPerc)
+        trust=format_currency(trust)
 
-        value=trans_data['amount'].sum(numeric_only=True)
-        volume=trans_data['tsnNumber'].count()
+        value=transactions_data['amount'].sum(numeric_only=True)
+        volume=transactions_data['tsnNumber'].count()
         av=value/volume
         
 
@@ -262,17 +258,17 @@ with tab3:
         metriz=st.container()
         with metriz:
             bal,val,vol,tic=st.columns(4)
-            # balance='{:,.0f}'.format(balance)
-            # bal.metric('Student Balance',f'UGX {balance}')
-            # studs='{:,.0f}'.format(stud)
-            # std.metric('Students',f'{studs}')
-            value='{:,.0f}'.format(value)
-            volume='{:,.0f}'.format(volume)
-            av='{:,.0f}'.format(av)
-            val.metric('Transaction Value',f'UGX {value}')
+            # balance=format_currency(balance)
+            # bal.metric('Student Balance',{balance})
+            # studs=format_currency(stud)
+            # std.metric('Students',f'{studs})
+            value=format_currency(value)
+            volume=format_currency(volume)
+            av=format_currency(av)
+            val.metric('Transaction Value',value)
             bal.metric('Active Accounts',f'{00000}')
-            vol.metric('Transaction Volume',f'{volume}')
-            tic.metric('Avg Ticket',f'UGX {av}')
+            vol.metric('Transaction Volume',volume)
+            tic.metric('Avg Ticket',av)
             bal.info(f'deposits UGX {yearlyDeposit}')
             val.info(f'Send UGX {yearlySend}')
             vol.info(f'trust: UGX {trust}')
@@ -280,7 +276,7 @@ with tab3:
 
         lin,linn=st.columns(2)
 
-        tns=px.pie(trans_data,values='amount',names='typeName',hole=.5)
+        tns=px.pie(transactions_data,values='amount',names='typeName',hole=.5)
         tns.update_layout(title_text='<b>Transactions Grouped By Type</b>',
                             height=500,
                             showlegend=True,
@@ -289,7 +285,7 @@ with tab3:
 
         with linn:
 
-            ln=px.histogram(trans_data, x="month", y="amount", color='typeName',barmode='group')#,animation_frame='date',animation_group='typeName')
+            ln=px.histogram(transactions_data, x="month", y="amount", color='typeName',barmode='group')#,animation_frame='date',animation_group='typeName')
             st.plotly_chart(ln)
 
             stns = px.histogram(merged_data, x='typeName', y='amount', color='gender', title='Transactions types grouped by gender' ,text_auto='.2s'
@@ -340,12 +336,8 @@ with tab3:
 
         
         with lin:
-
-            trans_data['cum']=trans_data['amount'].cumsum()
-            cumx=px.histogram(trans_data, x="month", y="cum", color='typeName',barmode='group')
-            st.plotly_chart(cumx)
-
-
+            cumx=px.bar(transactions_data, x="month", y="amount")
+            st.plotly_chart(cumx) 
 
             stns = px.histogram(merged_data, x='gender', y='amount', color='typeName', title='Total Monthly Transactions ' ,text_auto='.2s'
                 )
@@ -378,7 +370,7 @@ with tab3:
 
             st.plotly_chart(ctns)
 
-            smnt = px.histogram(trans_data, x='month', y='amount', color='typeName', title='Total Monthly Transactions ' ,text_auto='.2s'
+            smnt = px.histogram(transactions_data, x='month', y='amount', color='typeName', title='Total Monthly Transactions ' ,text_auto='.2s'
                 )
 
             smnt.update_layout(
@@ -392,17 +384,17 @@ with tab3:
             )
             # add a pie chart subplot for the transaction type breakdown
             smnt.add_trace(go.Pie(
-                labels=trans_data['typeName'],
-                values=trans_data['amount'],
+                labels=transactions_data['typeName'],
+                values=transactions_data['amount'],
                 hole=.4,    
                 # marker_colors=['#1a5ba6', '#00BFFF'],
                 domain=dict(x=[0.55, 1], y=[0.5, 1]),
                 texttemplate='%{percent}<br>%{label}',
             ))
-            # trans_data['Number']=trans_data.groupby('month')
+            # transactions_data['Number']=transactions_data.groupby('month')
             # smnt.add_trace(go.Pie(
-            #     labels=trans_data['typeName'],
-            #     values=trans_data['tsnNumber'],
+            #     labels=transactions_data['typeName'],
+            #     values=transactions_data['tsnNumber'],
             #     hole=.4,
             #     title='Transaction Type Value',
             #     # marker_colors=['#1a5ba6', '#00BFFF'],
@@ -441,22 +433,22 @@ with tab3:
 
 
     #######################################################
-    trans_data['month2']=trans_data['month']
+    transactions_data['month2']=transactions_data['month']
             
     class Monthly(Transactions):
-        def __init__(self, trans_data, month):
+        def __init__(self, transactions_data, month):
             super().__init__()
-            self.trans_data=trans_data
+            self.transactions_data=transactions_data
             self.month = month
         
         def showMonthlyAct(self):
-            mntly=st.multiselect("Choose a Month",options=trans_data[self.month].unique(), key=f"{self.month}-multiselect")
-            mont=trans_data.query(f'{self.month}==@mntly')
+            mntly=st.multiselect("Choose a Month",options=transactions_data[self.month].unique(), key=f"{self.month}-multiselect")
+            mont=transactions_data.query(f'{self.month}==@mntly')
             return mont
 
     # create two Monthly objects with different month values
-    monthly1 = Monthly(trans_data,"month")
-    monthly2 = Monthly(trans_data,"month2")
+    monthly1 = Monthly(transactions_data,"month")
+    monthly2 = Monthly(transactions_data,"month2")
 
     st.title('Monthly Comparison')
     month1, month2 = st.columns(2)
@@ -471,7 +463,7 @@ with tab3:
         for key, value in mfilt1.items():
             # st.info(value)
             for k,v in value.items():
-                v='{:,.0f}'.format(v)
+                v=format_currency(v)
                 st.info(f'{k }: : UGX {v}')
         
 
@@ -484,8 +476,8 @@ with tab3:
         mfilt2=mfilt2.to_dict()
         for key, value in mfilt2.items():
             for k,v in value.items():
-                v='{:,.0f}'.format(v)
-                st.info(f'{k }: : UGX {v}')
+                v=format_currency(v)
+                st.info(f'{k }: : {v}')
         
 
 
@@ -501,12 +493,12 @@ with tab4:
     # st.write(savings_data)
     saved=savings_data['savings'].sum()
     savers=savings_data['accounts'].sum()
-    saved='{:,.0f}'.format(saved)
+    saved=format_currency(saved)
 
-    savedeposit=saving_tsn[saving_tsn['typeId']==1]
+    savedeposit=saving_transactions_data[saving_transactions_data['typeId']==1]
     sav=savedeposit['amount'].sum()
     sCounts=savedeposit['counts'].count()
-    sav='{:,.0f}'.format(sav)
+    sav=format_currency(sav)
 
     metric1,metric2,metric3,metric4=st.columns(4)
     save1,save2=st.columns(2)
@@ -516,39 +508,33 @@ with tab4:
     act=go.Figure(go.Bar(x=savings_data['accounts'],y=savings_data['school'],orientation='h',text=savings_data['accounts'],textposition='inside'))
     act.update_layout(title='Savings Accounts per school',xaxis_title='Saving Accounts',yaxis_title='Schools')
 
-    metric1.metric('Saving Balance',f'UGX {saved}')
-    metric2.metric('savings Value',f'UGX {sav}')
+    metric1.metric('Saving Balance',saved)
+    metric2.metric('savings Value',sav)
     metric3.metric('saving accounts',f'{savers}')
     metric4.metric('savings Volume',f'{sCounts}')
     save1.plotly_chart(save)
     save2.plotly_chart(act)
     # st.write(sav)
-    # st.write(saving_tsn)
-    cl_savings=saving_tsn.groupby('class').sum()['amount']
-    count_savings=saving_tsn.groupby('class').count()['counts']
-    leaders=saving_tsn[saving_tsn['typeId']==1]
+    # st.write(saving_transactions_data)
+    cl_savings=saving_transactions_data.groupby('class').sum()['amount']
+    count_savings=saving_transactions_data.groupby('class').count()['counts']
+    leaders=saving_transactions_data[saving_transactions_data['typeId']==1]
     leaders=leaders.groupby('student').agg({'amount': 'sum', 'counts': 'count','class':'first','school':'first'})
     leaders=leaders.reset_index().sort_values('amount',ascending=False)
-    gnd=saving_tsn.groupby('gender').agg({'amount': 'sum', 'counts': 'count'})
-    leader1,leader2=st.columns(2)
-    with leader1:
-        st.subheader('General Balance Leader Board')
-        st.write(saved_bal.head(8))
-        st.subheader('General Transaction Leader Board')
-        st.write(leaders.head(8))
+    gnd=saving_transactions_data.groupby('gender').agg({'amount': 'sum', 'counts': 'count'})
+    leader1,leader2=st.columns(2)       
 
-        
-    with leader2:
+    with leader1:
         st.subheader('School Balance Leader Board')
         class Leader():
             lead=st.multiselect(
                 'Choose School',
-                options=saved_bal['school'].unique()
+                options=saving_balance_data['school'].unique()
             )
 
             def filter_school(self):
                 leads=Leader.lead
-                leads=saved_bal.query('school==@leads')
+                leads=saving_balance_data.query('school==@leads')
                 return leads
             
             def filter_tns(self):
@@ -558,30 +544,39 @@ with tab4:
     
         leadership=Leader()
         lid=leadership.filter_school()
-
-        
         # st.write(lid)
         # lid=lid[['student','balance','interest','class']]
         saving_bal=lid['balance'].sum()
         saving_min=lid['balance'].min()
-        saving_min='{:,.0f}'.format(saving_min)
+        saving_min=format_currency(saving_min)
         saving_max=lid['balance'].max()
-        saving_max='{:,.0f}'.format(saving_max)
-        saving_bal='{:,.0f}'.format(saving_bal)
+        saving_max=format_currency(saving_max)
+        saving_bal=format_currency(saving_bal)
         # saving_vol=lid['counts'].sum()
         saving_acc=lid['student'].count()
-        met1,met2,llead=st.columns([2,1,3])
-        met1.metric('Balance',f'UGX {saving_bal}')
-        # met2.metric('Volume',f'{saving_vol}')
-        met1.metric('Min',f'UGX {saving_min}')
-        met1.metric('Max',f'UGX {saving_max}')
-        met2.metric('Accounts',f'{saving_acc}')
-        llead.write(lid.head(5))
+        # met1,llead=st.columns([2,3])
+        
+        st.metric('Balance',saving_bal)
+        # met2.metric('Volume',f'{saving_vol})
+        st.metric('Max',saving_max)
+        st.metric('Min',saving_min)
+       
+        st.subheader('General Balance Leader Board')
+        st.write(saving_balance_data.head(8))
+    
+    with leader2:
+                
+        savings_acc,savings_vol=st.columns(2)
+        savings_acc.metric('Accounts',f'{saving_acc}')
+        # savings_vol.metric('Volume',f'{saving_vol}')
+        st.write(lid.head(7))
+        st.subheader('General Transaction Leader Board')
+        st.write(leaders.head(8))
 
-        st.subheader('School Balance Leader Board')
-        # llead.write(tlid)
-
-    # st.write(saving_tsn)
+        
+        # llead.write(tlid) 
+   
+   
 
 
     gnd=gnd.reset_index()
@@ -607,9 +602,9 @@ with tab4:
     # st.write(count_savings)
 
 with tab5:
-    # st.write(users)
-    noApp=users[users['pinCode']=='00000']
-    app=users[users['pinCode']!='00000']
+    # st.write(parents_data)
+    noApp=parents_data[parents_data['pinCode']=='00000']
+    app=parents_data[parents_data['pinCode']!='00000']
     noApp=noApp['userId'].count()
     app=app['userId'].count()
 
@@ -622,22 +617,22 @@ with tab5:
 
     st.subheader('parent transactions')
 
-    # st.write(ptrans)
-    # ptrans['amount']=ptrans['amount'].astype(int)
-    send=ptrans['amount'].sum()
-    sendCount=ptrans['id'].count()
+    # st.write(parent_transactions_data)
+    # parent_transactions_data['amount']=parent_transactions_data['amount'].astype(int)
+    send=parent_transactions_data['amount'].sum()
+    sendCount=parent_transactions_data['id'].count()
     # st.info(send)
     # st.info(sendCount)
 
-    p3.metric('Send Value',f'UGX {send}')
+    p3.metric('Send Value',send)
     p4.metric('Send Volume',f'{sendCount}')
 
-    dailySend=ptrans.groupby('date').agg({'amount': 'sum', 'id': 'count'})
+    dailySend=parent_transactions_data.groupby('date').agg({'amount': 'sum', 'id': 'count'})
     dailySend=dailySend.reset_index()
 
     # st.write(dailySend)
     
-    userSend=ptrans.groupby('userId').agg({'amount': 'sum', 'id': 'count','date':'max'}).sort_values(by='amount',ascending=False)
+    userSend=parent_transactions_data.groupby('userId').agg({'amount': 'sum', 'id': 'count','date':'max'}).sort_values(by='amount',ascending=False)
     userSend=userSend.reset_index()
     user_send_count=userSend['userId'].count()
 
@@ -648,20 +643,20 @@ with tab5:
     active_parents_count=active_parents['userId'].count()
     # st.write(active_parents)
     frozen=active_parents[(active_parents['date']>='2023-01-01') & (active_parents['date']<='2023-04-30')]
-    frozen=frozen.merge(users[['userId','phoneNumber']],on='userId',how='left')
+    frozen=frozen.merge(parents_data[['userId','phoneNumber']],on='userId',how='left')
     frozen_count=frozen['userId'].count()
-    frozen=frozen.merge(students[['userId','schoolId']],on='userId',how='left')
-    frozen=frozen.merge(schools[['schoolId','schName']],on='schoolId',how='left')
+    frozen=frozen.merge(students_data[['userId','schoolId']],on='userId',how='left')
+    frozen=frozen.merge(schools_data[['schoolId','schName']],on='schoolId',how='left')
     
     
 
     churn_parents=userSend[userSend['date']<'2023-01-01']
-    churn_parents_details=churn_parents.merge(users,on="userId", how="left")
-    churn_parents_details=churn_parents_details.merge(students,on='userId',how='left')
+    churn_parents_details=churn_parents.merge(parents_data,on="userId", how="left")
+    churn_parents_details=churn_parents_details.merge(students_data,on='userId',how='left')
     churn_parents_details=churn_parents_details.fillna('o')
     churn_parents_details=churn_parents_details[(churn_parents_details['studentId']!='o')&(churn_parents_details['schoolId']!=5)]
     churn_parents_details=churn_parents_details[['phoneNumber','amount','userName','firstName','lastName','className','schoolId','accBalance','date']]
-    churn_parents_details=churn_parents_details.merge(schools[['schoolId','schName']],on='schoolId',how='left').reset_index()
+    churn_parents_details=churn_parents_details.merge(schools_data[['schoolId','schName']],on='schoolId',how='left').reset_index()
     churn_parents_details=churn_parents_details.drop(columns=['index'])
     churn_parents_count=churn_parents_details['phoneNumber'].nunique()
     p3.metric("parents' Churn",f"{churn_parents_count}")
@@ -675,8 +670,8 @@ with tab5:
     pmf=active_parents[(active_parents['id']>=10)&(active_parents['amount']>=50000)]
     pmf_value=pmf['amount'].sum()
     pmf_count=pmf['userId'].count()
-    pmf=pmf.merge(users[['userId','phoneNumber']],on='userId',how='left')
-    # pmf=pmf.merge(schools[['schoolId','schName']],on='schoolId',how='left')
+    pmf=pmf.merge(parents_data[['userId','phoneNumber']],on='userId',how='left')
+    # pmf=pmf.merge(schools_data[['schoolId','schName']],on='schoolId',how='left')
     
     
     p1.metric('Current Active Parents',f'{int(active_parents_count)-int(frozen_count)}')
@@ -721,7 +716,7 @@ with tab5:
         bar_chart = go.Bar(x=dailySend['date'], y=dailySend['amount'], name='amount', marker=dict(color='#1a5ba6'))
 
         # create line chart
-        line_chart = go.Scatter(x=dailySend['date'], y=dailySend['id'], name='Volume', yaxis='y2', mode='lines+markers', line=dict(color='green'))
+        line_chart = go.Scatter(x=dailySend['date'], y=dailySend['id'], name='Volume', yaxis='y2', mode='lines', line=dict(color='green'))
 
         # create layout for charts
         layout = go.Layout(title='Daily Send Transaction Volume and Amount', xaxis=dict(title='Date',tickangle=-90,showgrid=True, gridcolor='lightgray', gridwidth=1), yaxis=dict(title='amount'), yaxis2=dict(title='Volume', overlaying='y', side='right'))
@@ -729,14 +724,38 @@ with tab5:
         # create figure
         fig = go.Figure(data=[bar_chart, line_chart], layout=layout)
 
-        fig.update_layout(plot_bgcolor='white')
+        fig.update_layout(
+            plot_bgcolor='white',
+            autosize=False,  # Disable autosize
+            width=1000,  # Set the width
+            height=600  # Set the height                          
+                        )
+        # Create an empty frame for the animation
+        # Set up animation frames
+        frames = [go.Frame(data=[go.Bar(x=dailySend['date'][:i+1], y=dailySend['amount'][:i+1])]) for i in range(len(dailySend))]
+        # fram = [go.Frame(data=[go.Scatter(x=dailySend['date'][:i+1], y=dailySend['id'][:i+1])]) for i in range(len(dailySend))]
+
+        # Add frames to figure
+        fig.frames = frames
+        # fig.frames = fram
+        # Set animation options
+        animation_options = dict(frame=dict(duration=400, redraw=True), fromcurrent=True)
+
+        # Animate the figure
+        fig.update_layout(updatemenus=[dict(type='buttons', buttons=[dict(label='Play', method='animate', args=[None, animation_options])])])
+
+        # Render the animated chart using Streamlit
         st.plotly_chart(fig)
 
+
+
+        # st.plotly_chart(fig)
+
     with monthly_send:
-        # st.write(ptrans)
+        # st.write(parent_transactions_data)
         
         
-        monthly_send=ptrans.groupby(['month','years']).agg({'amount':'sum','id':'count'}).reset_index().sort_values(by='month',ascending=True)
+        monthly_send=parent_transactions_data.groupby(['month','years']).agg({'amount':'sum','id':'count'}).reset_index().sort_values(by='month',ascending=True)
         # st.write(monthly_send)
         class SendYears():
             send_yaz=st.selectbox(
@@ -785,5 +804,5 @@ with tab5:
 
 
 with tab6:
-    st.write(schools)
+    st.write(schools_data)
  
