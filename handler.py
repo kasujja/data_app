@@ -162,7 +162,7 @@ class Parents:
     def __init__(self):
         try:
             self.db=Database(DB_URI)
-            self.parents='''select * from users ;'''
+            self.parents='''select userId,regDate,phoneNumber,lastLogin,pinCode,userName from users;'''
                                 # natural join schools inner join districts using(dstId);'''
             self.parents=pd.read_sql(self.parents,self.db.engine)
         except Exception as e:
@@ -171,6 +171,19 @@ class Parents:
     
     def getParents(self):
         return self.parents
+    
+class ParentAccounts:
+    def __init__(self):
+        try:
+            self.db=Database(DB_URI)
+            self.parent_accounts='''select userId,accBalance from parent_accounts;'''
+            self.parent_accounts=pd.read_sql(self.parent_accounts,self.db.engine)
+        except Exception as e:
+            traceback.print_exc()
+            logging.error('Error in p_acount init method:{}'.format(e))
+    
+    def getParentAccounts(self):
+        return self.parent_accounts
     
 class ParentTransactions:
     def __init__(self):

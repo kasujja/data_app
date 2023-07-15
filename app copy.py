@@ -107,12 +107,13 @@ with tab1:
         
         value=format_currency(value)
         deposit=format_currency(deposit)
-       
+        depositCount=format_currency(depositCount)
         depositTicket=format_currency(depositTicket)
         # deposit=float(deposit)
         cards=student_transactions_data[student_transactions_data['typeName']=='Card Activation']
         cards_value=cards['amount'].sum()
         cards_value=format_currency(cards_value)
+        volume=format_currency(volume)
 
         send=student_transactions_data[student_transactions_data['typeName']=='Send']
         send_value=send['amount'].sum()
@@ -240,7 +241,10 @@ with tab2:
             gdc=px.histogram(gd, x="className", y="accBalance", color='gender',barmode='group',title='Student Balance by class and gender')
             st.plotly_chart(gdc)
         # with bal:
-            
+            # cl=students_data[['gender','className','accBalance']]
+            # clb=px.histogram(cl, x="gender", y="accBalance", color='className',barmode='group',title='Student Balance grouped by Gender and Class')
+            # st.plotly_chart(clb)
+
     
 with tab3:
     st.title('Transactions')
@@ -285,6 +289,7 @@ with tab3:
             # studs=format_currency(stud)
             # std.metric('Students',f'{studs})
             value=format_currency(value)
+            volume=format_currency(volume)
             av=format_currency(av)
             val.metric('Transaction Value',value)
             bal.metric('Active Accounts',f'{00000}')
@@ -296,8 +301,19 @@ with tab3:
             tic.info(f' {sendPerc} %')
 
         lin,linn=st.columns(2)
+
+        # tns=px.pie(transactions_data,values='amount',names='typeName',hole=.5)
+        # tns.update_layout(title_text='<b>Transactions Grouped By Type</b>',
+        #                     height=500,
+        #                     showlegend=True,
+        #     )
+        # st.plotly_chart(tns)
+
         with linn:
 
+            # ln=px.histogram(transactions_data, x="month", y="amount", color='typeName',barmode='group')#,animation_frame='date',animation_group='typeName')
+            # st.plotly_chart(ln)
+            
             smnt = px.histogram(transactions_data, x='month', y='amount', color='typeName', title='Total Monthly Transactions grouped by transaction type ' ,text_auto='.2s'
                 )
 
@@ -319,6 +335,17 @@ with tab3:
                 domain=dict(x=[0.55, 1], y=[0.5, 1]),
                 texttemplate='%{percent}<br>%{label}',
             ))
+            # transactions_data['Number']=transactions_data.groupby('month')
+            # smnt.add_trace(go.Pie(
+            #     labels=transactions_data['typeName'],
+            #     values=transactions_data['tsnNumber'],
+            #     hole=.4,
+            #     title='Transaction Type Value',
+            #     # marker_colors=['#1a5ba6', '#00BFFF'],
+            #     domain=dict(x=[0, 0.3], y=[0.5, 1]),
+            #     textfont=dict(size=12),
+            #     texttemplate='%{percent}<br>%{label}',
+            # ))
             st.plotly_chart(smnt)
 
             stns = px.histogram(merged_data, x='typeName', y='amount', color='gender', title='Transactions types grouped by gender' ,text_auto='.2s'
@@ -333,6 +360,9 @@ with tab3:
                 yaxis=dict(title='Transaction Amount'),
                 yaxis2=dict(title='Transaction Count', overlaying='y', side='right', showgrid=True),
             )
+            # gend=merged_data[['studentId','gender','className','amount']].groupby(['gender']).count()
+            # gend=gend.reset_index()
+            # st.write(gender)
             pie_chart=go.Pie(
                 values=merged_data['amount'],
                 labels=merged_data['gender'],
@@ -344,6 +374,22 @@ with tab3:
             # st.plotly_chart(genx)
             stns.add_trace(pie_chart)
             st.plotly_chart(stns)
+
+
+            # ctns = px.histogram(merged_data, x='typeName', y='amount', color='className', title='Transactions types grouped by class' ,text_auto='.2s'
+            #     )
+
+            # ctns.update_layout(
+            #     barmode='group',
+            #     height=500,
+            #     plot_bgcolor='#f2f2f2',
+            #     legend=dict(title='Transaction Type'),
+            #     # xaxis_tickangle=0,
+            #     yaxis=dict(title='Transaction Amount'),
+            #     yaxis2=dict(title='Transaction Count', overlaying='y', side='right', showgrid=True),
+            # )
+
+            # st.plotly_chart(ctns)
 
             cgtns = px.histogram(merged_data, x='className', y='amount', color='gender', title='Transactions by gender and class' ,text_auto='.2s'
                 )
@@ -367,7 +413,23 @@ with tab3:
                 height=500
             )
             st.plotly_chart(cumx) 
-            
+
+            # stns = px.histogram(merged_data, x='gender', y='amount', color='typeName', title='Total Monthly Transactions ' ,text_auto='.2s'
+            #     )
+
+            # stns.update_layout(
+            #     barmode='group',
+            #     height=500,
+            #     plot_bgcolor='#f2f2f2',
+            #     legend=dict(title='Transaction Type'),
+            #     # xaxis_tickangle=0,
+            #     yaxis=dict(title='Transaction Amount'),
+            #     yaxis2=dict(title='Transaction Count', overlaying='y', side='right', showgrid=True),
+            # )
+
+            # st.plotly_chart(stns)
+
+
             ctns = px.histogram(merged_data, x='className', y='amount', color='typeName', title='Transactions types grouped by class ' ,text_auto='.2s'
                 )
 
@@ -400,7 +462,19 @@ with tab3:
         
 
     # with classTns:
-    
+    #     genc=merged_data[['className','amount']].groupby(['className']).sum()
+    #     genc=genc.reset_index()
+    #     # st.write(genc)
+    #     genm=px.pie(genc,values='amount',names='className',hole=0.5)
+    #     genm.update_layout(title_text='<b>transactions By className</b>',
+    #                     height=400,
+    #                     # domain=dict(x=[0.55, 1], y=[0.2, 1]),
+    #                     showlegend=True,
+                        
+    #     )
+    #     st.plotly_chart(genm)
+
+
     #######################################################
     transactions_data['month2']=transactions_data['month']
             
@@ -547,14 +621,19 @@ with tab4:
         
         # llead.write(tlid) 
    
+   
+
+
     gnd=gnd.reset_index()
     # st.write(gnd)
     gndx=px.pie(gnd,values='amount',names='gender',hole=0.5)
     gndx.update_layout(title_text='<b>Savings Distribution By Gender</b>',
                             height=300,
                             # domain=dict(x=[0.55, 1], y=[0.2, 1]),
-                            showlegend=True,            
-     )
+                            showlegend=True,
+                            
+                            
+            )
     save1.plotly_chart(gndx)
     cl_savings=cl_savings.reset_index()
     cl_sav=px.pie(cl_savings,values='amount',names='class',hole=0.5)
@@ -614,6 +693,8 @@ with tab5:
     frozen_count=frozen['userId'].count()
     frozen=frozen.merge(students_data[['userId','schoolId']],on='userId',how='left')
     frozen=frozen.merge(schools_data[['schoolId','schName']],on='schoolId',how='left')
+    
+    
 
     churn_parents=userSend[userSend['date']<'2023-01-01']
     churn_parents_details=churn_parents.merge(parents_data,on="userId", how="left")
@@ -630,11 +711,15 @@ with tab5:
     frozen_origin=frozen.groupby('schName').count()['userId']
     churn_parents_details_origin=churn_parents_details.groupby('schName').count()['phoneNumber']
 
+    
+
     pmf=active_parents[(active_parents['id']>=10)&(active_parents['amount']>=50000)]
     pmf_value=pmf['amount'].sum()
     pmf_count=pmf['userId'].count()
     pmf=pmf.merge(parents_data[['userId','phoneNumber']],on='userId',how='left')
     # pmf=pmf.merge(schools_data[['schoolId','schName']],on='schoolId',how='left')
+    
+    
     p1.metric('Current Active Parents',f'{int(active_parents_count)-int(frozen_count)}')
     p1.info(f'actives { active_parents_count}')
     p1.info(user_send_count)
@@ -708,10 +793,14 @@ with tab5:
         # Render the animated chart using Streamlit
         st.plotly_chart(fig)
 
+
+
         # st.plotly_chart(fig)
 
     with monthly_send:
-        # st.write(parent_transactions_data)  
+        # st.write(parent_transactions_data)
+        
+        
         monthly_send=parent_transactions_data.groupby(['month','years']).agg({'amount':'sum','id':'count'}).reset_index().sort_values(by='month',ascending=True)
         # st.write(monthly_send)
         class SendYears():
@@ -757,6 +846,10 @@ with tab5:
     st.write(frozen_origin.sort_values(ascending=False))
     st.subheader('Pending Send')
     st.write(parent_accounts_data)
+
+
+
+
 
 with tab6:
     st.write(schools_data)
