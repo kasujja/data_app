@@ -45,36 +45,18 @@ def format_currency(value):
     return 'UGX {:,.0f}'.format(value)
 
 merged_data = students_data.merge(student_transactions_data, on="studentId", how="left")
-import pandas as pd
 
-# Rename column 'accBalance' to 'walletBalance'
 parent_accounts_data.rename(columns={'accBalance': 'walletBalance'}, inplace=True)
-
-# Merge 'parent_accounts_data' with 'parents_data' on 'userId'
 parent_accounts_data = parent_accounts_data.merge(parents_data[['userId', 'phoneNumber']], on='userId', how='right')
-
-# Merge 'parent_accounts_data' with 'students_data' on 'userId'
 parent_accounts_data = parent_accounts_data.merge(students_data[['firstName', 'lastName', 'schoolId', 'userId', 'accBalance']], on='userId', how='right')
-
-# Merge 'parent_accounts_data' with 'schools_data' on 'schoolId'
 parent_accounts_data = parent_accounts_data.merge(schools_data[['schName', 'schoolId']], on='schoolId', how='right')
-
 # Rename columns: 'schName' to 'school', 'accBalance' to 'cardBalance', 'phoneNumber' to 'parent'
 parent_accounts_data.rename(columns={'schName': 'school', 'accBalance': 'cardBalance', 'phoneNumber': 'parent'}, inplace=True)
-
-# Combine 'firstName' and 'lastName' to create 'student' column
 parent_accounts_data['student'] = parent_accounts_data['firstName'] + ' ' + parent_accounts_data['lastName']
-
-# Drop unnecessary columns
 parent_accounts_data.drop(columns=['userId', 'schoolId', 'firstName', 'lastName'], inplace=True)
-
 # Filter rows where 'walletBalance' is greater than or equal to 10000
 parent_accounts_data = parent_accounts_data[parent_accounts_data['walletBalance'] >= 10000]
-
-# Sort by 'walletBalance' in descending order
 parent_accounts_data.sort_values('walletBalance', ascending=False, inplace=True)
-
-# Reset index and select desired columns
 parent_accounts_data = parent_accounts_data[['parent', 'walletBalance', 'student', 'cardBalance', 'school']].reset_index(drop=True)
 
 st.sidebar.image('./awu.jpg',caption='')
@@ -97,27 +79,22 @@ with tab1:
     active=active['studentId'].nunique()
     # st.info(f'Active students{active}')
     # st.title('OverAll')
-    #building app layout
     metrics=st.container()
     with metrics:
         bal,std,val,vol=st.columns(4)
         balance=format_currency(balance)
         bal.metric('Student Balance',balance)
-        studs=format_currency(stud)
-        
+        studs=format_currency(stud)        
         value=format_currency(value)
-        deposit=format_currency(deposit)
-       
+        deposit=format_currency(deposit)       
         depositTicket=format_currency(depositTicket)
         # deposit=float(deposit)
         cards=student_transactions_data[student_transactions_data['typeName']=='Card Activation']
         cards_value=cards['amount'].sum()
         cards_value=format_currency(cards_value)
-
         send=student_transactions_data[student_transactions_data['typeName']=='Send']
         send_value=send['amount'].sum()
         send_value=format_currency(send_value)
-
         std.metric('Cards Sold',cards_value)
         std.info(f'Mobile Money, {send_value}')
         val.metric('Transaction Value',value)
@@ -134,8 +111,6 @@ with tab1:
 
 
     st.subheader('Watch Man')
-
-
     class WatchMan(Transactions):
         dail=st.date_input("Choose a day", datetime.date(2022, 5, 13))
         
@@ -154,9 +129,7 @@ with tab1:
     # sums=sums.reset_index()
     typeCounts=dfilt.groupby('typeName').count()['tsnNumber'].sort_values(ascending=False)
     # std=dfilt['studentId'].nunique()
-    # st.write(std)
-
-
+    # st.write(std) 
     watch1,watch2=st.columns(2)
     with watch1:
         daily_value=format_currency(daily_value)
@@ -448,10 +421,7 @@ with tab3:
         for key, value in mfilt2.items():
             for k,v in value.items():
                 v=format_currency(v)
-                st.info(f'{k }: : {v}')
-        
-
-
+                st.info(f'{k }: : {v}') 
     #######################################################
 
     week=Weekly()
@@ -464,14 +434,18 @@ with tab4:
     # st.write(savings_data)
     saved=savings_data['savings'].sum()
     savers=savings_data['accounts'].sum()
+    interest=savings_data['interest'].sum()
+    opening_revenue=savers*2000
     saved=format_currency(saved)
-
+    interest=format_currency(interest)
+    opening_revenue=format_currency(opening_revenue)
     savedeposit=saving_transactions_data[saving_transactions_data['typeId']==1]
     sav=savedeposit['amount'].sum()
     sCounts=savedeposit['counts'].count()
     sav=format_currency(sav)
 
-    metric1,metric2,metric3,metric4=st.columns(4)
+    metric1,metric2,metric3,metric4,metric5=st.columns(5)
+    metric6,metric7=st.columns(2)
     save1,save2=st.columns(2)
     save=go.Figure(go.Bar(x=savings_data['savings'],y=savings_data['school'],orientation='h',text=savings_data['savings'],textposition='inside'))
     save.update_layout(title='Savings Balance per school',xaxis_title='Savings',yaxis_title='Schools')
@@ -483,6 +457,9 @@ with tab4:
     metric2.metric('savings Value',sav)
     metric3.metric('saving accounts',f'{savers}')
     metric4.metric('savings Volume',f'{sCounts}')
+    metric5.metric('Total Interest',interest)
+    metric6.metric('Opening Revenue',opening_revenue)
+    
     save1.plotly_chart(save)
     save2.plotly_chart(act)
     # st.write(sav)
@@ -519,21 +496,28 @@ with tab4:
         # lid=lid[['student','balance','interest','class']]
         saving_bal=lid['balance'].sum()
         saving_min=lid['balance'].min()
-        saving_min=format_currency(saving_min)
         saving_max=lid['balance'].max()
+        saving_acc=lid['student'].count()
+        saving_interest=lid['interest'].sum()
+        account_opening=saving_acc*2000
+        saving_min=format_currency(saving_min)
         saving_max=format_currency(saving_max)
         saving_bal=format_currency(saving_bal)
+        saving_interest=format_currency(saving_interest)
+        account_opening=format_currency(account_opening)
         # saving_vol=lid['counts'].sum()
-        saving_acc=lid['student'].count()
+        
         # met1,llead=st.columns([2,3])
         
         st.metric('Balance',saving_bal)
         # met2.metric('Volume',f'{saving_vol})
         st.metric('Max',saving_max)
         st.metric('Min',saving_min)
+        st.metric('interest',saving_interest)
+        st.metric('Account Opening',account_opening)
        
-        st.subheader('General Balance Leader Board')
-        st.write(saving_balance_data.head(8))
+        # st.subheader('General Balance Leader Board')
+        # st.write(saving_balance_data.head(8))
     
     with leader2:
                 
@@ -541,9 +525,18 @@ with tab4:
         savings_acc.metric('Accounts',f'{saving_acc}')
         # savings_vol.metric('Volume',f'{saving_vol}')
         st.write(lid.head(7))
-        st.subheader('General Transaction Leader Board')
-        st.write(leaders.head(8))
+        # st.subheader('General Transaction Leader Board')
+        # st.write(leaders.head(8))
 
+    l1,l2=st.columns(2)    
+    with l1:
+        st.subheader('General Balance Leader Board')
+        st.write(saving_balance_data.head(8))
+        
+    with l2:
+        st.subheader('General Transaction Leader Board')
+        st.write(leaders)#.head(8))
+        
         
         # llead.write(tlid) 
    
@@ -731,13 +724,23 @@ with tab5:
         st.subheader('MONTHLY')
 
         # create bar chart
-        bar_chart = go.Bar(x=monthly_send_data['month'], y=monthly_send_data['amount'], name='amount', marker=dict(color='#1a5ba6'))
+        bar_chart = go.Bar(x=monthly_send_data['month'], 
+                           y=monthly_send_data['amount'], 
+                           name='amount', marker=dict(color='#1a5ba6'))
 
         # create line chart
-        line_chart = go.Scatter(x=monthly_send_data['month'], y=monthly_send_data['id'], name='Volume', yaxis='y2', mode='lines+markers', line=dict(color='green'))
+        line_chart = go.Scatter(x=monthly_send_data['month'], 
+                                y=monthly_send_data['id'], 
+                                name='Volume', yaxis='y2',
+                                mode='lines+markers', 
+                                line=dict(color='green'))
 
         # create layout for charts
-        layout = go.Layout(title='Monthly Send Transaction Volume and Amount', xaxis=dict(title='Date',tickangle=-90,showgrid=True, gridcolor='lightgray', gridwidth=1), yaxis=dict(title='amount'), yaxis2=dict(title='Volume', overlaying='y', side='right'))
+        layout = go.Layout(title='Monthly Send Transaction Volume and Amount', 
+                            xaxis=dict(title='Date',tickangle=-90,showgrid=True, 
+                            gridcolor='lightgray', gridwidth=1), 
+                            yaxis=dict(title='amount'), 
+                            yaxis2=dict(title='Volume', overlaying='y', side='right'))
 
         # create figure
         fig = go.Figure(data=[bar_chart, line_chart], layout=layout)
@@ -760,4 +763,6 @@ with tab5:
 
 with tab6:
     st.write(schools_data)
+ 
+ 
  

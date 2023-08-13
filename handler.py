@@ -1,5 +1,5 @@
 from db import Database
-import pandas as pd
+import pandas as pd 
 import traceback
 import logging
 from config import DB_URI
@@ -57,18 +57,18 @@ class StudentTransactions:
     def getStudentTransactions(self):
         return self.transactions
     
-class Savings:
-    def __init__(self):
-        try:
-            self.db=Database(DB_URI)
-            self.student_savings='select * from saving_accounts'
-            self.student_savings=pd.read_sql(self.student_savings,self.db.engine)
-        except Exception as e:
-            traceback.print_exc()
-            logging.error("Error in StudentTransactions init method: {}".format(e))
+# class Savings:
+#     def __init__(self):
+#         try:
+#             self.db=Database(DB_URI)
+#             self.student_savings='select * from saving_accounts'
+#             self.student_savings=pd.read_sql(self.student_savings,self.db.engine)
+#         except Exception as e:
+#             traceback.print_exc()
+#             logging.error("Error in StudentTransactions init method: {}".format(e))
 
-    def getSavings(self):
-        return self.student_savings
+#     def getSavings(self):
+#         return self.student_savings
     
 class Daily:
     def __init__(self):
@@ -96,9 +96,8 @@ class Weekly:
             self.weekly_activity=pd.read_sql(self.weekly_activity,self.db.engine)
         except Exception as e:
             traceback.print_exc()
-            logging.error("Error in weekly_activity init method:{}".format(e))
-
-
+            logging.error("Error in weekly_activity init method:{}".format(e)) 
+            
             # select count(tsnNumber) Volume,sum(tsnAmmount) Amount,yearweek(tsnDate)
             # Week from transactions inner join parents_transactions
             # using (tsnNumber) where  typeId=3 and tsnDate>"2022-05-01" group by yearweek(tsnDate);'
@@ -145,7 +144,7 @@ class Savings:
     def __init__(self):
         try:
             self.db=Database(DB_URI)
-            self.savings='''SELECT  SUM(balance) savings, COUNT(studentId) accounts,schName school
+            self.savings='''SELECT  SUM(balance) savings,sum(interest) interest, COUNT(studentId) accounts,schName school
                             FROM  savings_accounts INNER JOIN students USING (studentId) NATURAL JOIN
                             schools GROUP BY schoolId ORDER BY savings DESC;'''
             self.savings=pd.read_sql(self.savings,self.db.engine)
