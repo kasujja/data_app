@@ -20,10 +20,9 @@ class Students:
                                      using(studentId) inner join classes using(classId)'''
             self.students = pd.read_sql(self.students, self.db.engine)
         except Exception as e:
-            traceback.print_exc()
-            logging.error("Error in Students init method: {}".format(e))
+            logging.error(f"Error in Students init method: {e}")
 
-    def getStudents(self):
+    def getData(self):
         return self.students
 
 class Transactions:
@@ -38,7 +37,7 @@ class Transactions:
             traceback.print_exc()
             logging.error("Error in Students init method: {}".format(e))
     
-    def getTransactions(self):
+    def getData(self):
         return self.students_transactions
 
     
@@ -54,7 +53,7 @@ class StudentTransactions:
             traceback.print_exc()
             logging.error("Error in StudentTransactions init method: {}".format(e))
 
-    def getStudentTransactions(self):
+    def getData(self):
         return self.transactions
     
 # class Savings:
@@ -82,7 +81,7 @@ class Daily:
             traceback.print_exc()
             logging.error("Error in daily_activity init method: {}".format(e))
 
-    def getActivity(self):
+    def getData(self):
         return self.daily_activity
     
 
@@ -104,7 +103,7 @@ class Weekly:
 
 
     
-    def getWeekly(self):
+    def getData(self):
         return self.weekly_activity
 
     
@@ -122,7 +121,7 @@ class SavingTransactions:
             logging.error("Error in SavingTransactions init method: {}".format(e))
 
     
-    def getSavingTsn(self):
+    def getData(self):
         return self.saving_transactions           
 
 class SavingBalance:
@@ -137,7 +136,7 @@ class SavingBalance:
             traceback.print_exc()
             logging.error("Error in SavingBalance init method: {}".format(e))
 
-    def getSavingBalance(self):
+    def getData(self):
         return self.saving_balance
     
 class Savings:
@@ -152,7 +151,7 @@ class Savings:
             traceback.print_exc()
             logging.error("Error in Savings init method: {}".format(e))
     
-    def getSavings(self):
+    def getData(self):
         return self.savings
     
 
@@ -168,7 +167,7 @@ class Parents:
             traceback.print_exc()
             logging.error('Error in parents init method:{}'.format(e))
     
-    def getParents(self):
+    def getData(self):
         return self.parents
     
 class ParentAccounts:
@@ -181,7 +180,7 @@ class ParentAccounts:
             traceback.print_exc()
             logging.error('Error in p_acount init method:{}'.format(e))
     
-    def getParentAccounts(self):
+    def getData(self):
         return self.parent_accounts
     
 class ParentTransactions:
@@ -195,7 +194,7 @@ class ParentTransactions:
             traceback.print_exc()
             logging.error('Error in parent transactions init method{}'.format(e))
     
-    def getParent_transactions(self):
+    def getData(self):
         return self.parent_transactions
 
 class Schools:
@@ -209,11 +208,124 @@ class Schools:
             traceback.print_exc()
             logging.error('Error in schools init method:{}'.format(e))
     
-    def getSchools(self):
+    def getData(self):
         return self.schools
     
-
+class SchoolPerformance:
+    def __init__(self):
+        try:
+            self.db = Database(DB_URI)
+            self.school_transactions ="""WITH SchoolTransactionData AS (
+                                                SELECT
+                                                    s.schoolId,
+                                                    s.schName school,
+                                                    COUNT(t.tsnNumber) AS transactions,
+                                                    FORMAT(SUM(t.tsnAmmount), 0) AS Amount,
+                                                    format(SUM(CASE WHEN tt.typeName = 'Withdraw' THEN t.tsnAmmount ELSE 0 END),0) AS Withdraw,
+                                                    format(SUM(CASE WHEN tt.typeName = 'Send' THEN t.tsnAmmount ELSE 0 END),0) AS Send,
+                                                    format(SUM(CASE WHEN tt.typeName = 'Payment' THEN t.tsnAmmount ELSE 0 END),0) AS Payment,
+                                                    format(SUM(CASE WHEN tt.typeName = 'Deposit' THEN t.tsnAmmount ELSE 0 END),0) AS Deposit,
+                                                    format(SUM(CASE WHEN tt.typeName = 'Card Replacement' THEN t.tsnAmmount ELSE 0 END),0) AS CardReplacement,
+                                                    format(SUM(CASE WHEN tt.typeName = 'Card Activation' THEN t.tsnAmmount ELSE 0 END),0) AS CardActivation
+                                                FROM
+                                                    schools s
+                                                    LEFT JOIN students stu ON s.schoolId = stu.schoolId
+                                                    LEFT JOIN student_transactions st ON stu.studentId = st.studentId
+                                                    LEFT JOIN transactions t ON st.tsnNumber = t.tsnNumber
+                                                    LEFT JOIN transaction_type tt ON t.typeId = tt.typeId
+                                                WHERE s.schoolId IS NOT NULL
+                                                GROUP BY s.schoolId
+                                            ),
+                                            StudentCounts AS (
+                                                SELECT
+                                                    s.schoolId,
+                                                    COUNT(DISTINCT stu.studentId) AS TotalStudents,
+                                                    COUNT(DISTINCT CASE WHEN u.pinCode != '00000' THEN stu.studentId END) AS ActiveStudents
+                                                FROM
+                                                    schools s
+                                                    LEFT JOIN students stu ON s.schoolId = stu.schoolId
+                                                    LEFT JOIN users u ON stu.userId = u.userId
+                                                WHERE s.schoolId IS NOT NULL
+                                                GROUP BY s.schoolId
+                                            ),
+                                            ParentCounts AS (
+                                                SELECT
+                                                    s.schoolId,
+                                                    COUNT(DISTINCT CASE WHEN u.pinCode != '00000' THEN u.userId END) AS ParentApps
+                                                FROM
+                                                    schools s
+                                                    LEFT JOIN students stu ON s.schoolId = stu.schoolId
+                                                    LEFT JOIN users u ON stu.userId = u.userId
+                                                WHERE s.schoolId IS NOT NULL
+                                                GROUP BY s.schoolId
+                                            )
+                                            SELECT
+                                                std.schoolId,
+                                                school,
+                                                transactions,
+                                                Amount,
+                                                Withdraw,
+                                                Send,
+                                                Payment,
+                                                Deposit,
+                                                CardReplacement,
+                                                CardActivation,
+                                                TotalStudents,
+                                                ActiveStudents,
+                                                ParentApps
+                                            FROM SchoolTransactionData std
+                                            LEFT JOIN StudentCounts sc ON std.schoolId = sc.schoolId
+                                            LEFT JOIN ParentCounts pc ON std.schoolId = pc.schoolId
+                                            ORDER BY transactions DESC, Amount DESC;"""
+                                                                        
+            self.school_transactions=pd.read_sql(self.school_transactions,self.db.engine)
+        except Exception as e:
+            logging.error(f'Error in school Performance init method:{e}')
+            traceback.print_exc()
     
+    def getData(self):
+        return self.school_transactions
+    
+# SELECT 
+#     FORMAT(mainAcc.main, 2) CardBalance,
+#     FORMAT(saved.saving, 2) Savings,
+#     FORMAT(MoMo.momo, 2) SchoolMoMo,
+#     mainAcc.school
+# FROM
+#     (SELECT 
+#         SUM(accBalance) main, schName school
+#     FROM
+#         student_accounts
+#     JOIN students USING (studentId)
+#     JOIN schools USING (schoolId)
+#     GROUP BY schoolId) mainAcc
+#         JOIN
+#     (SELECT 
+#         SUM(balance) saving, schName school
+#     FROM
+#         savings_accounts
+#     JOIN students USING (studentId)
+#     JOIN schools USING (schoolId)
+#     GROUP BY schoolId) saved ON mainAcc.school = saved.school
+#         JOIN
+#     (SELECT 
+#         balance momo, schName school
+#     FROM
+#         school_momo_accounts
+#     JOIN schools USING (schoolId)) MoMo ON mainAcc.school = MoMo.school
+# ORDER BY mainAcc.main DESC;
+
+# select studentId, count(studentId) from student_accounts group by studentId having count(studentId)>1
+
+# SELECT                                                                 
+#     studentId, COUNT(studentId)
+# FROM
+#     student_accounts
+# GROUP BY studentId
+# HAVING COUNT(studentId) > 1;
+
+
+
 
 
 
