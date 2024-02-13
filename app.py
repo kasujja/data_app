@@ -10,7 +10,7 @@ import datetime
 import numpy as np
 from st_aggrid import AgGrid
 from collections import OrderedDict, defaultdict
-from handler import Students , StudentTransactions,Transactions,Daily, Weekly,Savings,SavingTransactions,Parents,Schools,SavingBalance,ParentTransactions,ParentAccounts,SchoolPerformance
+from handler import Students, StudentTransactions,Transactions,Daily, Weekly,Savings,SavingTransactions,Parents,Schools,SavingBalance,ParentTransactions,ParentAccounts,SchoolPerformance
 # from student_transactions import StudentTransactions
 
 st.set_page_config(page_title='KAWU',layout='wide')
@@ -36,6 +36,7 @@ def data_loader():
 
     return data
 data=data_loader()
+
 students=data['students']
 student_transactions=data['student_transactions']
 transactions=data['transactions']
@@ -118,43 +119,45 @@ with tab1:
         dor.metric('Dormant Cards',f'{int(stud)-int(active)}')
         kaw.metric('In Kawu',f'{kawu}')
         loaded.metric('loaded',f'{stud-kawu}',f'{-kawu}')                                        
+st.info(depositCount)
+st.info(depositTicket)
+st.info(value)
 
-
-    st.subheader('Watch Man')
-    class WatchMan(Transactions):
-        dail=st.date_input("Choose a day", datetime.date(2022, 5, 13))
+    # st.subheader('Watch Man')
+    # class WatchMan(Transactions):
+        # dail=st.date_input("Choose a day", datetime.date(2022, 5, 13))
         
-        def showdDailyAct(self):
-            da=WatchMan.dail
-            dai=merged.query('date==@da')
-            return dai
+        # def showdDailyAct(self):
+        #     da=WatchMan.dail
+        #     dai=merged.query('date==@da')
+        #     return dai
         
-    daily=WatchMan()
-    dfilt=daily.showdDailyAct()
+    # daily=WatchMan()
+    # dfilt=daily.showdDailyAct()
     # st.write(dfilt)
 
-    daily_value=dfilt['amount'].sum()
-    daily_volume=dfilt['tsnNumber'].count()
-    sums=dfilt.groupby('typeName').sum()['amount'].sort_values(ascending=False)
+    # daily_value=dfilt['amount'].sum()
+    # daily_volume=dfilt['tsnNumber'].count()
+    # sums=dfilt.groupby('typeName').sum()['amount'].sort_values(ascending=False)
     # sums=sums.reset_index()
-    typeCounts=dfilt.groupby('typeName').count()['tsnNumber'].sort_values(ascending=False)
+    # typeCounts=dfilt.groupby('typeName').count()['tsnNumber'].sort_values(ascending=False)
     # std=dfilt['studentId'].nunique()
     # st.write(std) 
-    watch1,watch2=st.columns(2)
-    with watch1:
-        daily_value=format_currency(daily_value)
-        st.metric('transaction Value',daily_value)
-        sums=sums.to_dict()
-        # watch1.write(sums)
-        for key,value in sums.items():
-            value=format_currency(value)
-            st.info(f'{key} :: UGX  {value}')
+    # watch1,watch2=st.columns(2)
+    # with watch1:
+        # daily_value=format_currency(daily_value)
+        # st.metric('transaction Value',daily_value)
+        # sums=sums.to_dict()
+        # # watch1.write(sums)
+        # for key,value in sums.items():
+        #     value=format_currency(value)
+        #     st.info(f'{key} :: UGX  {value}')
     
-    with watch2:
-        watch2.metric('transaction Volume',f' {daily_volume}') 
-        typeCounts=typeCounts.to_dict()
-        for key,value in typeCounts.items():
-            st.info(f'{key} ::  {value}')
+    # with watch2:
+        # watch2.metric('transaction Volume',f' {daily_volume}') 
+        # typeCounts=typeCounts.to_dict()
+        # for key,value in typeCounts.items():
+        #     st.info(f'{key} ::  {value}')
 
         # watch2.write(typeCounts)
     # st.write(students)

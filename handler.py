@@ -17,7 +17,7 @@ class Students:
             self.db = Database(DB_URI)
             self.students = '''select studentId, date(regDate) regDate, firstName, lastName, gender, userId,
                                      schoolId, className, accBalance from students inner join student_accounts 
-                                     using(studentId) inner join classes using(classId)'''
+                                     using(studentId) inner join classes using(classId);'''
             self.students = pd.read_sql(self.students, self.db.engine)
         except Exception as e:
             logging.error(f"Error in Students init method: {e}")
@@ -31,7 +31,7 @@ class Transactions:
             self.db = Database(DB_URI)
             self.students_transactions='''select tsnNumber, tsnAmmount amount, monthname(tsnDate) month,
                                           year(tsnDate) year,date(tsnDate)date, typeName from transactions inner
-                                          join transaction_type using(typeId);'''
+                                          join transaction_type using(typeId) where statusId=1;'''
             self.students_transactions=pd.read_sql(self.students_transactions,self.db.engine)
         except Exception as e:
             traceback.print_exc()
